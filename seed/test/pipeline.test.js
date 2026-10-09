@@ -108,3 +108,35 @@ describe('buildWords', () => {
     ]);
   });
 });
+
+describe('fold: shared forms and Russian contamination', () => {
+  const ix = createIndex();
+  for (const e of [
+    { word: 'ти', pos: 'pron', lang_code: 'uk', forms: [{ form: 'тебе́', source: 'declension' }], senses: [{ glosses: ['you'] }] },
+    { word: 'він', pos: 'pron', lang_code: 'uk', forms: [{ form: 'тебе', source: 'declension' }, { form: 'його', source: 'declension' }], senses: [{ glosses: ['he'] }] },
+    { word: "м'яти", pos: 'verb', lang_code: 'uk', forms: [{ form: 'мне', source: 'conjugation' }, { form: 'мну', source: 'conjugation' }], senses: [{ glosses: ['to rumple'] }] },
+    { word: 'знати', pos: 'verb', lang_code: 'uk', forms: [{ form: 'знаю', source: 'conjugation' }, { form: 'знає', source: 'conjugation' }], senses: [{ glosses: ['to know'] }] },
+  ]) addEntry(ix, e);
+
+  it('credits a form shared by several lemmas only to the lemma seen most on its own', () => {
+    const folded = fold(parseFrequency('ти 500\nвін 300\nтебе 200\n'), ix);
+    expect(folded.find((f) => f.lemma === 'ти')).toMatchObject({ freq: 700, forms: ['ти', 'тебе'] });
+    expect(folded.find((f) => f.lemma === 'він')).toMatchObject({ freq: 300, forms: ['він'] });
+  });
+
+  it('drops tokens flagged as Russian, keeping the rest of the lemma', () => {
+    const folded = fold(parseFrequency('мне 1000\nмну 2\nзнаю 400\nзнає 300\n'), ix, { russian: new Set(['мне']) });
+    expect(folded.find((f) => f.lemma === "м'яти")).toEqual({ lemma: "м'яти", freq: 2, forms: ['мну'] });
+    expect(folded.find((f) => f.lemma === 'знати')).toMatchObject({ freq: 700, forms: ['знаю', 'знає'] });
+  });
+
+  it('drops a flagged token even when it is itself a lemma', () => {
+    const folded = fold(parseFrequency('знати 50\n'), ix, { russian: new Set(['знати']) });
+    expect(folded.map((f) => f.lemma)).not.toContain('знати');
+  });
+
+  it('removes a lemma entirely when only Russian evidence remains', () => {
+    const folded = fold(parseFrequency('мне 1000\n'), ix, { russian: new Set(['мне']) });
+    expect(folded.map((f) => f.lemma)).not.toContain("м'яти");
+  });
+});
