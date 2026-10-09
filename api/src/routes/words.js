@@ -56,7 +56,7 @@ export function wordRoutes({ now }) {
     }
     if (status !== 'known' && status !== 'learning') throw httpError(400, 'bad_status', 'status must be known, learning or reset');
     const update = status === 'known' ? { $set: { status } } : { $set: { status, due: now() } };
-    const progress = await Progress.findOneAndUpdate({ wordId: word._id }, update, { upsert: true, new: true, setDefaultsOnInsert: true }).lean();
+    const progress = await Progress.findOneAndUpdate({ wordId: word._id }, update, { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }).lean();
     res.json({ progress });
   });
 
@@ -68,7 +68,7 @@ export function wordRoutes({ now }) {
     const progress = await Progress.findOneAndUpdate(
       { wordId: word._id },
       { $inc: { micTotal: 1, micPass: pass ? 1 : 0 } },
-      { new: true },
+      { returnDocument: 'after' },
     ).lean();
     res.json({ progress });
   });
