@@ -1,16 +1,18 @@
-FROM node:24.19-alpine AS web
+# Base images come from AWS's mirror of the Docker official images: Docker Hub rate-limits
+# anonymous pulls from shared CI runners (429 Too Many Requests).
+FROM public.ecr.aws/docker/library/node:24.19-alpine AS web
 WORKDIR /app/web
 COPY web/package.json web/package-lock.json ./
 RUN npm ci
 COPY web/ ./
 RUN npm run build
 
-FROM node:24.19-alpine AS api
+FROM public.ecr.aws/docker/library/node:24.19-alpine AS api
 WORKDIR /app/api
 COPY api/package.json api/package-lock.json ./
 RUN npm ci --omit=dev
 
-FROM node:24.19-alpine AS runtime
+FROM public.ecr.aws/docker/library/node:24.19-alpine AS runtime
 ENV NODE_ENV=production WEB_DIST=/app/web/dist
 WORKDIR /app
 COPY --from=api /app/api/node_modules ./api/node_modules
