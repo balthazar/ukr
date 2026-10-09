@@ -63,7 +63,7 @@ input[type='text'], input[type='search'], input[type='password'] { font: inherit
 .word-list { list-style: none; padding: 0; margin: 0; }
 .word-list a { display: grid; grid-template-columns: 3rem 1fr auto; gap: 8px; padding: 10px 4px; border-bottom: 1px solid var(--line); color: var(--text); }
 .word-list .rank { color: var(--muted); }
-.status { font-size: 0.75rem; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); }
+.status { align-self: start; white-space: nowrap; font-size: 0.75rem; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); }
 .status.learning { color: var(--warn); border-color: var(--warn); }
 .status.known { color: var(--ok); border-color: var(--ok); }
 .big-word { font-size: 2.6rem; font-weight: 700; margin: 0.25rem 0; }
