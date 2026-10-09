@@ -4,6 +4,7 @@ import { displayGloss } from '../lib/gloss.js';
 import { playWord } from '../lib/play.js';
 import ProgressBar from '../components/ProgressBar.jsx';
 import { rememberWordsUrl } from '../lib/wordsUrl.js';
+import { matchesFilter } from '../lib/filters.js';
 
 const FILTERS = [['tolearn', 'To learn'], ['new', 'New'], ['learning', 'Learning'], ['known', 'Known'], ['', 'All']];
 const LIMIT = 50;
@@ -38,13 +39,17 @@ export default function Words({ query }) {
     return () => clearTimeout(t);
   }, [q, search]);
 
-  useEffect(() => {
-    writeUrl({ q: search, f: filter, p: page });
+  function loadPage() {
     const params = new URLSearchParams({ page, limit: LIMIT });
     if (filter) params.set('status', filter);
     if (search) params.set('q', search);
+    return api(`/words?${params}`).then(setData).catch((e) => setError(e.message));
+  }
+
+  useEffect(() => {
+    writeUrl({ q: search, f: filter, p: page });
     setError('');
-    api(`/words?${params}`).then(setData).catch((e) => setError(e.message));
+    loadPage();
   }, [search, filter, page]);
 
   useEffect(() => {
@@ -55,7 +60,13 @@ export default function Words({ query }) {
     const status = w.progress?.status === 'known' ? 'learning' : 'known';
     try {
       const { progress } = await api(`/words/${w._id}/status`, { method: 'PUT', body: { status } });
-      setData((d) => ({ ...d, items: d.items.map((x) => (x._id === w._id ? { ...x, progress } : x)) }));
+      if (matchesFilter(progress?.status, filter)) {
+        setData((d) => ({ ...d, items: d.items.map((x) => (x._id === w._id ? { ...x, progress } : x)) }));
+      } else {
+        // It no longer belongs in this view: drop it now, then refill the page.
+        setData((d) => ({ ...d, total: d.total - 1, items: d.items.filter((x) => x._id !== w._id) }));
+        loadPage();
+      }
       setStats((s) => s && {
         ...s,
         known: s.known + (status === 'known' ? 1 : -1),
