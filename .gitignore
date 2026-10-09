@@ -3,3 +3,4 @@ dist/
 seed/raw/
 .env
 .superpowers/
+.gstack/
