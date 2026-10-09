@@ -1,5 +1,14 @@
 import { respell } from './respell.js';
 
+// A vowel letter's recording is the vowel itself; a consonant's is its name (в = "ve").
+const VOWEL_LETTERS = new Set([...'аеиіоуєюяї']);
+
+function audioFor(index, lemma, lem) {
+  if (lem.audio.length) return lem.audio;
+  const letter = index.letterAudio?.get(lemma);
+  return letter && VOWEL_LETTERS.has(lemma) ? [{ url: letter, source: 'commons-letter' }] : [];
+}
+
 export function buildWords(index, folded, { limit = 5000 } = {}) {
   const out = [];
   for (const f of folded) {
@@ -16,7 +25,7 @@ export function buildWords(index, folded, { limit = 5000 } = {}) {
       pos: lem.pos.join(', '),
       glosses: lem.glosses.slice(0, 5),
       forms: f.forms,
-      audio: lem.audio,
+      audio: audioFor(index, f.lemma, lem),
       freq: f.freq,
     });
   }

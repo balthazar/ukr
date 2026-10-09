@@ -31,8 +31,15 @@ Tests: `npm test` in `api/`, `seed/` and `web/`.
 
 ```sh
 cd seed && npm install && npm run download && npm run build
-git add out/words.json && git commit -m "seed: rebuild word list"
+npm run tts   # macOS only: pre-renders words with no recording into web/public/tts
+git add out/words.json ../web/public/tts && git commit -m "seed: rebuild word list"
 ```
+
+Words without a Wiktionary recording get speech pre-rendered with Apple's Lesya
+voice (silence trimmed, loudness normalized, 30 ms fade-out). Each render is
+rejected if its last 50 ms is within 10 dB of its loudest part, so engine
+artifacts at the end never ship. One-vowel words (у) use the Wiktionary
+recording of that letter. The device's own voice is only a last resort.
 
 The subtitle frequency list is roughly a third Russian, so the build also
 downloads a Russian frequency list and drops tokens whose Ukrainian frequency is

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.js';
 import { checkPronunciation } from '../lib/match.js';
+import { audioLabel } from '../lib/audioLabel.js';
 import { canRecognize, canRecord, canSpeak, micHint, recognizeOnce, speak, startRecording, ukrainianVoice } from '../lib/speech.js';
 
 const RESULT_TEXT = { pass: 'Match', close: 'Close', miss: 'Not quite' };
@@ -89,9 +90,7 @@ export default function PronouncePanel({ word }) {
         <button className="primary" onClick={listen} disabled={!canListen}>
           Listen
         </button>
-        <span className="muted small">
-          {native ? 'native recording' : canListen ? 'synthetic voice' : 'no audio available on this device'}
-        </span>
+        <span className="muted small">{audioLabel(word.audio, Boolean(canSpeak && voice))}</span>
       </div>
       <div className="row" style={{ marginTop: 8 }}>
         {canRecord && <button onClick={toggleRecord}>{recording ? 'Stop' : 'Record'}</button>}

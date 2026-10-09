@@ -14,7 +14,7 @@ export const plain = (s) => s.toLowerCase().replace(/[̀́]/g, '').replace(/[ʼ�
 export const isUkrainianWord = (s) => UK_WORD.test(s) && /[^'-]/.test(s);
 
 export function createIndex() {
-  return { lemmas: new Map(), formToLemmas: new Map() };
+  return { lemmas: new Map(), formToLemmas: new Map(), letterAudio: new Map() };
 }
 
 function addForm(index, form, lemma) {
@@ -26,6 +26,13 @@ function addForm(index, form, lemma) {
 
 export function addEntry(index, e) {
   if (e.lang_code && e.lang_code !== 'uk') return;
+  if (e.pos === 'character') {
+    // Letters are not words, but their recordings are the fallback for one-letter words (у).
+    const letter = plain(e.word ?? '');
+    const urls = (e.sounds ?? []).map((s) => s.mp3_url).filter(Boolean);
+    if ([...letter].length === 1 && urls.length && !index.letterAudio.has(letter)) index.letterAudio.set(letter, urls[0]);
+    return;
+  }
   if (SKIP_POS.has(e.pos)) return;
   const word = plain(e.word ?? '');
   if (!isUkrainianWord(word)) return;
