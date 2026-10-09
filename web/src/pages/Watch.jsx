@@ -65,7 +65,7 @@ export default function Watch() {
       <h1>Watch</h1>
       <form onSubmit={search} className="row">
         <input type="search" placeholder="Search YouTube (Ukrainian results first)" value={q} onChange={(e) => setQ(e.target.value)} style={{ flex: 1 }} />
-        <button className="primary">Search</button>
+        <button className="btn primary">Search</button>
       </form>
       {error && <p className="banner">{error}</p>}
       {results && (
@@ -86,7 +86,7 @@ export default function Watch() {
       </div>
       <form onSubmit={addChannel} className="row" style={{ marginTop: 8 }}>
         <input type="text" placeholder="Add channel: URL, @handle or UC id" value={newChannel} onChange={(e) => setNewChannel(e.target.value)} style={{ flex: 1 }} />
-        <button disabled={!newChannel.trim()}>Add</button>
+        <button className="btn" disabled={!newChannel.trim()}>Add</button>
       </form>
       {channelVideos && <div className="grid" style={{ marginTop: 12 }}>{channelVideos.items.map((v) => <VideoTile key={v.videoId} video={v} />)}</div>}
 

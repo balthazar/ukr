@@ -18,7 +18,9 @@ export function reviewRoutes({ config, now }) {
       .map((p) => ({ word: wordById.get(String(p.wordId)), progress: p, isNew: false }));
 
     const introducedToday = await Progress.countDocuments({ introducedAt: { $gte: startOfUtcDay(t) } });
-    const allowance = Math.max(0, config.newPerDay - introducedToday);
+    // ?more=N lets a session go past the daily limit ("learn 10 more").
+    const more = Math.min(50, Math.max(0, parseInt(req.query.more, 10) || 0));
+    const allowance = Math.max(0, config.newPerDay - introducedToday) + more;
     const startedIds = (await Progress.find({}, { wordId: 1 }).lean()).map((p) => p.wordId);
     const newWords = allowance
       ? await Word.find({ _id: { $nin: startedIds } }).sort({ rank: 1 }).limit(allowance).lean()

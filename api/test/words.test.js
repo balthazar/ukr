@@ -40,12 +40,24 @@ describe('GET /api/words', () => {
     expect(await lemmas('new')).toEqual(['я']);
     expect(await lemmas('learning')).toEqual(['дякувати']);
     expect(await lemmas('known')).toEqual(['хата']);
+    expect(await lemmas('tolearn')).toEqual(['я', 'дякувати']);
     await agent.get('/api/words?status=bogus').expect(400);
   });
 
   it('searches lemma prefix and gloss substring', async () => {
     expect((await agent.get('/api/words').query({ q: 'дяк' })).body.items.map((w) => w.lemma)).toEqual(['дякувати']);
     expect((await agent.get('/api/words').query({ q: 'HOUSE' })).body.items.map((w) => w.lemma)).toEqual(['хата']);
+  });
+
+  it('gloss search matches at word starts only', async () => {
+    await Word.create([
+      { rank: 4, lemma: 'легкий', glosses: ['lightly', 'easy, simple'], forms: [] },
+      { rank: 5, lemma: 'тривожний', glosses: ['uneasy, anxious'], forms: [] },
+    ]);
+    const res = await agent.get('/api/words').query({ q: 'easy' }).expect(200);
+    expect(res.body.items.map((w) => w.lemma)).toEqual(['легкий']);
+    const partial = await agent.get('/api/words').query({ q: 'eas' }).expect(200);
+    expect(partial.body.items.map((w) => w.lemma)).toEqual(['легкий']);
   });
 
   it('search matches typographic apostrophes against stored ASCII ones', async () => {

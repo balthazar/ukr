@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { Word, Progress } from '../models.js';
 import { httpError, escapeRegex, isObjectId } from '../lib/http.js';
 
-const STATUSES = ['new', 'learning', 'known'];
+const STATUSES = ['new', 'learning', 'known', 'tolearn'];
 
 async function findWord(id) {
   if (!isObjectId(id)) throw httpError(404, 'not_found', 'word not found');
@@ -23,13 +23,16 @@ export function wordRoutes({ now }) {
 
     if (q) {
       const rx = escapeRegex(q);
-      filter.$or = [{ lemma: new RegExp(`^${rx}`) }, { glosses: new RegExp(rx, 'i') }];
+      // Glosses match at word starts: "easy" finds "easy" and "easily", not "uneasy".
+      filter.$or = [{ lemma: new RegExp(`^${rx}`) }, { glosses: new RegExp(`\\b${rx}`, 'i') }];
     }
     if (status !== undefined) {
       if (!STATUSES.includes(status)) throw httpError(400, 'bad_status', `status must be one of ${STATUSES.join(', ')}`);
-      const started = await Progress.find(status === 'new' ? {} : { status }, { wordId: 1 }).lean();
-      const ids = started.map((p) => p.wordId);
-      filter._id = status === 'new' ? { $nin: ids } : { $in: ids };
+      // tolearn = everything not known yet (new + learning).
+      const excluding = status === 'new' || status === 'tolearn';
+      const query = status === 'new' ? {} : status === 'tolearn' ? { status: 'known' } : { status };
+      const ids = (await Progress.find(query, { wordId: 1 }).lean()).map((p) => p.wordId);
+      filter._id = excluding ? { $nin: ids } : { $in: ids };
     }
 
     const [items, total] = await Promise.all([

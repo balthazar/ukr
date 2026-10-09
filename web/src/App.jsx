@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from './api.js';
 import { useRoute } from './route.js';
+import { wordsUrl } from './lib/wordsUrl.js';
 import Login from './pages/Login.jsx';
 import Today from './pages/Today.jsx';
 import Review from './pages/Review.jsx';
@@ -18,7 +19,7 @@ const TABS = [
 
 export default function App() {
   const [authed, setAuthed] = useState(null);
-  const [section, param] = useRoute();
+  const { section, param, query } = useRoute();
 
   useEffect(() => {
     api('/me').then(() => setAuthed(true)).catch(() => setAuthed(false));
@@ -32,7 +33,7 @@ export default function App() {
 
   let page;
   if (section === 'review') page = <Review />;
-  else if (section === 'words') page = param ? <WordPage key={param} id={param} /> : <Words />;
+  else if (section === 'words') page = param ? <WordPage key={param} id={param} /> : <Words query={query} />;
   else if (section === 'watch') page = param ? <Player key={param} videoId={param} /> : <Watch />;
   else page = <Today />;
 
@@ -41,7 +42,7 @@ export default function App() {
       <main>{page}</main>
       <nav className="tabs">
         {TABS.map(([key, label]) => (
-          <a key={key} href={`#/${key}`} className={section === key ? 'active' : ''}>
+          <a key={key} href={key === 'words' ? wordsUrl() : `#/${key}`} className={section === key ? 'active' : ''}>
             {label}
           </a>
         ))}

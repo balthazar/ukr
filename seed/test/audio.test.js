@@ -73,3 +73,13 @@ describe('hasLoudTail', () => {
     expect(hasLoudTail([])).toBe(true);
   });
 });
+
+describe('gloss overrides', () => {
+  it('drops glosses listed as wrong for a lemma (я is not "ego")', () => {
+    const ix = createIndex();
+    addEntry(ix, { word: 'я', pos: 'pron', lang_code: 'uk', senses: [{ glosses: ['I'] }] });
+    addEntry(ix, { word: 'я', pos: 'noun', lang_code: 'uk', senses: [{ glosses: ['ego'] }] });
+    const [w] = buildWords(ix, fold(parseFrequency('я 10\n'), ix), { excludedGlosses: { я: ['ego'] } });
+    expect(w.glosses).toEqual(['I']);
+  });
+});

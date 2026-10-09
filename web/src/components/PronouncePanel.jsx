@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { api } from '../api.js';
 import { checkPronunciation } from '../lib/match.js';
 import { audioLabel } from '../lib/audioLabel.js';
-import { canRecognize, canRecord, canSpeak, micHint, recognizeOnce, speak, startRecording, ukrainianVoice } from '../lib/speech.js';
+import { playWord } from '../lib/play.js';
+import { canRecognize, canRecord, canSpeak, micHint, recognizeOnce, startRecording, ukrainianVoice } from '../lib/speech.js';
 
 const RESULT_TEXT = { pass: 'Match', close: 'Close', miss: 'Not quite' };
 
@@ -14,7 +15,6 @@ export default function PronouncePanel({ word }) {
   const [error, setError] = useState('');
   const recRef = useRef(null);
   const starting = useRef(false);
-  const native = word.audio?.[0]?.url;
 
   useEffect(() => {
     if (!canSpeak) return;
@@ -34,16 +34,6 @@ export default function PronouncePanel({ word }) {
     },
     [],
   );
-
-  function listen() {
-    if (native) {
-      new Audio(native).play().catch(() => {
-        if (canSpeak) speak(word.lemma);
-      });
-    } else {
-      speak(word.lemma);
-    }
-  }
 
   async function toggleRecord() {
     setError('');
@@ -82,25 +72,23 @@ export default function PronouncePanel({ word }) {
     }
   }
 
-  const canListen = Boolean(native) || (canSpeak && voice);
+  const canListen = Boolean(word.audio?.length) || (canSpeak && voice);
 
   return (
     <div className="pronounce">
       <div className="row">
-        <button className="primary" onClick={listen} disabled={!canListen}>
-          Listen
+        <button className="btn primary" onClick={() => playWord(word)} disabled={!canListen}>
+          ▶ Listen
         </button>
-        <span className="muted small">{audioLabel(word.audio, Boolean(canSpeak && voice))}</span>
-      </div>
-      <div className="row" style={{ marginTop: 8 }}>
-        {canRecord && <button onClick={toggleRecord}>{recording ? 'Stop' : 'Record'}</button>}
-        {mine && <button onClick={() => new Audio(mine).play()}>Play mine</button>}
+        {canRecord && <button className="btn" onClick={toggleRecord}>{recording ? '■ Stop' : '● Record'}</button>}
+        {mine && <button className="btn" onClick={() => new Audio(mine).play()}>Play mine</button>}
         {canRecognize && (
-          <button onClick={runCheck} disabled={check?.listening}>
+          <button className="btn" onClick={runCheck} disabled={check?.listening}>
             {check?.listening ? 'Listening...' : 'Check'}
           </button>
         )}
       </div>
+      <div className="muted small hint">{audioLabel(word.audio, Boolean(canSpeak && voice))}</div>
       {check && !check.listening && (
         <p>
           <span className={`result-${check.result}`}>{RESULT_TEXT[check.result]}</span>{' '}

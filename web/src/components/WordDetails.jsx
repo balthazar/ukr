@@ -1,14 +1,20 @@
 import PronouncePanel from './PronouncePanel.jsx';
+import StatusControl from './StatusControl.jsx';
 
-export default function WordDetails({ word }) {
+export default function WordDetails({ word, onStatus }) {
   return (
     <div className="card">
+      <div className="card-head">
+        <span className="muted small">
+          #{word.rank}
+          {word.pos && <> · {word.pos}</>}
+        </span>
+        {onStatus && <StatusControl status={word.progress?.status} onChange={onStatus} />}
+      </div>
       <div className="big-word">{word.stressed || word.lemma}</div>
       <div className="respelling">{word.respelling}</div>
-      <div className="muted small">
-        {word.ipa} {word.pos && <>· {word.pos}</>} · #{word.rank}
-      </div>
-      <ul>
+      {word.ipa && <div className="muted small">{word.ipa}</div>}
+      <ul className="glosses">
         {word.glosses?.map((g) => <li key={g}>{g}</li>)}
       </ul>
       {word.forms?.length > 1 && <p className="muted small">Common forms: {word.forms.join(', ')}</p>}

@@ -1,17 +1,30 @@
 import { useEffect, useState } from 'react';
 
-const current = () => (location.hash.startsWith('#/') ? location.hash.slice(2) : 'today');
+const safeDecode = (s) => {
+  try {
+    return decodeURIComponent(s);
+  } catch {
+    return undefined;
+  }
+};
+
+// '#/words/abc?q=easy' -> { section: 'words', param: 'abc', query: URLSearchParams }
+export function parseHash(hash) {
+  const raw = hash.startsWith('#/') ? hash.slice(2) : '';
+  const [path, search = ''] = raw.split('?');
+  const [section, param] = path.split('/');
+  return { section: section || 'today', param: param ? safeDecode(param) : undefined, query: new URLSearchParams(search) };
+}
 
 export function useRoute() {
-  const [path, setPath] = useState(current);
+  const [hash, setHash] = useState(() => location.hash);
   useEffect(() => {
     const on = () => {
-      setPath(current());
+      setHash(location.hash);
       window.scrollTo(0, 0);
     };
     window.addEventListener('hashchange', on);
     return () => window.removeEventListener('hashchange', on);
   }, []);
-  const [section, param] = path.split('/');
-  return [section || 'today', param ? decodeURIComponent(param) : undefined];
+  return parseHash(hash);
 }

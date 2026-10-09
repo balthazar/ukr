@@ -24,7 +24,7 @@ export default function Login({ onDone }) {
     <form className="login" onSubmit={submit}>
       <h1>ukr</h1>
       <input type="password" autoFocus autoComplete="current-password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
-      <button className="primary" disabled={busy || !password}>Enter</button>
+      <button className="btn primary" disabled={busy || !password}>Enter</button>
       {error && <p className="error">{error}</p>}
     </form>
   );

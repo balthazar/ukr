@@ -51,6 +51,15 @@ describe('GET /api/review', () => {
     expect(res.body.cards.map((c) => c.word.lemma)).toEqual(['w3', 'w4', 'w5']);
   });
 
+  it('?more=N adds N new words beyond the daily limit', async () => {
+    for (const w of words.slice(0, 3)) await agent.post(`/api/review/${w._id}`).send({ grade: 2 }).expect(200);
+    expect((await agent.get('/api/review')).body.cards).toEqual([]);
+    const res = await agent.get('/api/review?more=2').expect(200);
+    expect(res.body.cards.map((c) => c.word.lemma)).toEqual(['w4', 'w5']);
+    expect((await agent.get('/api/review?more=999')).body.cards.length).toBe(3); // only 3 unstarted words left
+    await agent.get('/api/review?more=-5').expect(200);
+  });
+
   it('ignores progress whose word no longer exists', async () => {
     const ghost = new Word({ rank: 99, lemma: 'ghost' })._id;
     await Progress.create({ wordId: ghost, status: 'learning', due: new Date(0) });

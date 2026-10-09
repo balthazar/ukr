@@ -9,7 +9,10 @@ function audioFor(index, lemma, lem) {
   return letter && VOWEL_LETTERS.has(lemma) ? [{ url: letter, source: 'commons-letter' }] : [];
 }
 
-export function buildWords(index, folded, { limit = 5000 } = {}) {
+// Glosses Wiktionary merges into a lemma that are wrong for learners (noun "ego" on я).
+export const EXCLUDED_GLOSSES = { я: ['ego'] };
+
+export function buildWords(index, folded, { limit = 5000, excludedGlosses = EXCLUDED_GLOSSES } = {}) {
   const out = [];
   for (const f of folded) {
     if (out.length >= limit) break;
@@ -23,7 +26,7 @@ export function buildWords(index, folded, { limit = 5000 } = {}) {
       respelling: respell(stressed),
       ipa: lem.ipa ?? '',
       pos: lem.pos.join(', '),
-      glosses: lem.glosses.slice(0, 5),
+      glosses: lem.glosses.filter((g) => !excludedGlosses[f.lemma]?.includes(g)).slice(0, 5),
       forms: f.forms,
       audio: audioFor(index, f.lemma, lem),
       freq: f.freq,

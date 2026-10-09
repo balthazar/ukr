@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { api } from '../api.js';
 import VideoTile from '../components/VideoTile.jsx';
+import ProgressBar from '../components/ProgressBar.jsx';
 
 export default function Today() {
   const [stats, setStats] = useState(null);
@@ -18,13 +19,14 @@ export default function Today() {
   return (
     <section>
       <h1>Today</h1>
+      <ProgressBar known={stats.known} learning={stats.learning} total={stats.words} />
       <div className="stats">
         <div><b>{stats.due}</b><span>due</span></div>
         <div><b>{stats.learning}</b><span>learning</span></div>
         <div><b>{stats.known}</b><span>known</span></div>
         <div><b>{stats.videosWatched}</b><span>videos watched</span></div>
       </div>
-      <a className="button primary block" href="#/review">
+      <a className="btn primary block" href="#/review">
         Start review ({stats.due} due, {stats.newToday} new so far today)
       </a>
       {videos.length > 0 && (

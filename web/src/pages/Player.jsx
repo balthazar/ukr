@@ -93,7 +93,7 @@ export default function Player({ videoId }) {
       </div>
       <h2>{title || videoId}</h2>
       <div className="row">
-        <button onClick={toggleWatched}>{watched ? 'Mark unwatched' : 'Mark watched'}</button>
+        <button className="btn" onClick={toggleWatched}>{watched ? 'Mark unwatched' : 'Mark watched'}</button>
         {saved?.position > 0 && <span className="muted small">resumed at {fmtDuration(saved.position)}</span>}
       </div>
       {error && <p className="error">{error}</p>}
