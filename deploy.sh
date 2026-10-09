@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build, push and roll out from this machine (CI does the same on push to main).
+# Build, push and roll out from this machine (CI does the same on push to master).
 # Needs: docker logged in to ghcr.io with a PAT that has write:packages.
 set -euo pipefail
 cd "$(dirname "$0")"

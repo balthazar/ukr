@@ -43,7 +43,7 @@ Re-seeding keeps progress for words that remain.
 
 ## Deploy
 
-Push to `main`: GitHub Actions tests, builds `ghcr.io/balthazar/ukr`, and rolls
+Push to `master`: GitHub Actions tests, builds `ghcr.io/balthazar/ukr`, and rolls
 out `deployment/ukr` in `apps` on `dadonew`. `./deploy.sh` does the same from a
 laptop. Secrets live only in the `ukr-secrets` k8s Secret (this repo is public).
 
