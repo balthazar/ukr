@@ -31,4 +31,9 @@ describe('app basics', () => {
     expect(csp).toContain('frame-src https://www.youtube.com');
     expect(csp).toContain('https://upload.wikimedia.org');
   });
+
+  it('sends a Referer-friendly policy (YouTube embeds fail with no-referrer)', async () => {
+    const res = await request(app).get('/health');
+    expect(res.headers['referrer-policy']).toBe('strict-origin-when-cross-origin');
+  });
 });

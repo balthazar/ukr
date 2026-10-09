@@ -27,7 +27,8 @@ export function createApp({ config, yt = null, now = () => new Date() }) {
   // Cloudflare -> Traefik -> pod: trust X-Forwarded-For so req.ip is the client.
   app.set('trust proxy', true);
   app.disable('x-powered-by');
-  app.use(helmet({ contentSecurityPolicy: { directives: CSP } }));
+  // YouTube embeds need a Referer; helmet's default is no-referrer.
+  app.use(helmet({ contentSecurityPolicy: { directives: CSP }, referrerPolicy: { policy: 'strict-origin-when-cross-origin' } }));
   app.use(express.json({ limit: '100kb' }));
   app.use(cookieParser());
 

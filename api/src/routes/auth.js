@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import rateLimit from 'express-rate-limit';
+import { rateLimit, ipKeyGenerator } from 'express-rate-limit';
 import { signToken, verifyToken, safeEqual } from '../lib/token.js';
 
 export const COOKIE = 'ukr_session';
@@ -13,6 +13,8 @@ export function authRoutes(config) {
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     message: { error: 'too_many_attempts' },
+    // Cloudflare sets CF-Connecting-IP to the real client; X-Forwarded-For is client-controlled.
+    keyGenerator: (req) => req.get('cf-connecting-ip') || ipKeyGenerator(req.ip),
     // trust proxy is deliberately `true` (Cloudflare -> Traefik -> pod).
     validate: { trustProxy: false },
   });

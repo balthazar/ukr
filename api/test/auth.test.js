@@ -55,4 +55,13 @@ describe('auth', () => {
     await request(app).post('/api/login').set('X-Forwarded-For', '1.2.3.4').send({ password: testConfig.appPassword }).expect(429);
     await request(app).post('/api/login').set('X-Forwarded-For', '5.6.7.8').send({ password: testConfig.appPassword }).expect(200);
   });
+
+  it('keys the login limit on the Cloudflare client IP, so a spoofed X-Forwarded-For cannot reset it', async () => {
+    const app = createApp({ config: testConfig });
+    for (let i = 0; i < 10; i++) {
+      await request(app).post('/api/login').set('CF-Connecting-IP', '9.9.9.9').set('X-Forwarded-For', `10.0.0.${i}`).send({ password: 'x' }).expect(401);
+    }
+    await request(app).post('/api/login').set('CF-Connecting-IP', '9.9.9.9').set('X-Forwarded-For', '10.0.1.1').send({ password: testConfig.appPassword }).expect(429);
+    await request(app).post('/api/login').set('CF-Connecting-IP', '8.8.8.8').set('X-Forwarded-For', '10.0.0.0').send({ password: testConfig.appPassword }).expect(200);
+  });
 });

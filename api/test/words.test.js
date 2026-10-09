@@ -48,6 +48,14 @@ describe('GET /api/words', () => {
     expect((await agent.get('/api/words').query({ q: 'HOUSE' })).body.items.map((w) => w.lemma)).toEqual(['хата']);
   });
 
+  it('search matches typographic apostrophes against stored ASCII ones', async () => {
+    await Word.create({ rank: 4, lemma: "сім'я", glosses: ['family'], forms: [] });
+    for (const q of ['сім’я', 'сімʼя', "сім'я"]) {
+      const res = await agent.get('/api/words').query({ q }).expect(200);
+      expect(res.body.items.map((w) => w.lemma)).toEqual(["сім'я"]);
+    }
+  });
+
   it('search survives regex metacharacters and stress marks', async () => {
     for (const q of ['(', '.*', '[', '\\']) {
       const res = await agent.get('/api/words').query({ q }).expect(200);

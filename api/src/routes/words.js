@@ -18,7 +18,7 @@ export function wordRoutes({ now }) {
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 50));
     const { status } = req.query;
-    const q = typeof req.query.q === 'string' ? req.query.q.replace(/[̀́]/g, '').trim().toLowerCase() : '';
+    const q = typeof req.query.q === 'string' ? req.query.q.replace(/[\u0300\u0301]/g, '').replace(/[\u02bc\u2019`]/g, "'").trim().toLowerCase() : '';
     const filter = {};
 
     if (q) {

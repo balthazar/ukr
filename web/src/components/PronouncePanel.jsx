@@ -12,6 +12,7 @@ export default function PronouncePanel({ word }) {
   const [check, setCheck] = useState(null);
   const [error, setError] = useState('');
   const recRef = useRef(null);
+  const starting = useRef(false);
   const native = word.audio?.[0]?.url;
 
   useEffect(() => {
@@ -22,6 +23,16 @@ export default function PronouncePanel({ word }) {
   }, []);
 
   useEffect(() => () => mine && URL.revokeObjectURL(mine), [mine]);
+
+  // Leaving the card mid-recording must release the microphone.
+  const mounted = useRef(true);
+  useEffect(
+    () => () => {
+      mounted.current = false;
+      recRef.current?.stop();
+    },
+    [],
+  );
 
   function listen() {
     if (native) {
@@ -36,15 +47,23 @@ export default function PronouncePanel({ word }) {
   async function toggleRecord() {
     setError('');
     if (recording) {
-      setMine(await recRef.current.stop());
+      const rec = recRef.current;
+      recRef.current = null;
       setRecording(false);
+      setMine(await rec.stop());
       return;
     }
+    if (starting.current) return;
+    starting.current = true;
     try {
-      recRef.current = await startRecording();
+      const rec = await startRecording();
+      if (!mounted.current) return void rec.stop();
+      recRef.current = rec;
       setRecording(true);
     } catch (err) {
       setError(micHint(err));
+    } finally {
+      starting.current = false;
     }
   }
 
