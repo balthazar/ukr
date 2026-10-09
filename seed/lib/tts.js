@@ -25,6 +25,18 @@ export function attachTts(words, exists) {
   });
 }
 
+// Pre-rendered audio is derived data: drop it so attachTts can re-add only files that exist.
+export function stripTts(words) {
+  const keep = (a) => (a?.source === 'tts' ? null : a);
+  return words.map((w) => ({
+    ...w,
+    audio: w.audio.filter((a) => a.source !== 'tts'),
+    ...(w.tables
+      ? { tables: w.tables.map((t) => ({ ...t, sections: t.sections.map((s) => ({ ...s, rows: s.rows.map((r) => ({ ...r, cells: r.cells.map((c) => (c ? { ...c, audio: keep(c.audio) } : c)) })) })) })) }
+      : {}),
+  }));
+}
+
 // RMS dB per 50 ms window. A clean rendering ends quieter than it speaks; a burst or
 // cut-off at the end leaves the last window loud.
 export function hasLoudTail(rmsDb) {

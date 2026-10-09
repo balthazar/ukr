@@ -96,3 +96,15 @@ describe('attachTts on table cells', () => {
     expect(rows[1].cells[1]).toBeNull();
   });
 });
+
+import { stripTts } from '../lib/tts.js';
+
+describe('stripTts', () => {
+  it('removes pre-rendered audio from words and cells, keeping recordings', () => {
+    const rec = { url: 'https://x', source: 'commons' };
+    const tts = { url: '/tts/a.mp3', source: 'tts' };
+    const [w] = stripTts([{ lemma: 'а', audio: [tts], tables: [{ sections: [{ rows: [{ cells: [{ form: 'а', audio: tts }, { form: 'б', audio: rec }, null] }] }] }] }]);
+    expect(w.audio).toEqual([]);
+    expect(w.tables[0].sections[0].rows[0].cells.map((c) => c?.audio ?? null)).toEqual([null, rec, null]);
+  });
+});

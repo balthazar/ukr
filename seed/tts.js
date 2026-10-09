@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { ttsFile, attachTts, hasLoudTail, tableCells } from './lib/tts.js';
+import { ttsFile, attachTts, hasLoudTail, tableCells, stripTts } from './lib/tts.js';
 import { plain } from './lib/kaikki.js';
 
 const run = promisify(execFile);
@@ -29,13 +29,27 @@ async function render(text) {
   const raw = path.join(tmp, `${ttsFile(text)}.aiff`);
   await run('say', ['-v', VOICE, '-o', raw, '--', text]);
   if (hasLoudTail(await rmsWindows(raw))) return { text, ok: false };
-  // Trim silence at both ends, fade the last 30 ms, normalize loudness, pad 80 ms of silence.
-  const af = [
-    'silenceremove=start_periods=1:start_threshold=-50dB',
-    'areverse', 'silenceremove=start_periods=1:start_threshold=-50dB', 'afade=t=in:d=0.03', 'areverse',
-    'afade=t=in:d=0.01', 'loudnorm=I=-18:TP=-2:LRA=7', 'aresample=24000', 'apad=pad_dur=0.08', 'aformat=sample_fmts=s16p:channel_layouts=mono',
-  ].join(',');
-  await run('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-i', raw, '-af', af, '-ac', '1', '-b:a', '32k', fileURLToPathSafe(new URL(ttsFile(text), outDir))]);
+  // Trim silence at both ends, normalize loudness, fade the end, pad 80 ms of silence.
+  // A final plosive (груп, стоп) can still pop after trimming: retry with a longer fade,
+  // and drop the file if the finished audio still ends loud.
+  const out = fileURLToPathSafe(new URL(ttsFile(text), outDir));
+  for (const fade of [0.03, 0.12]) {
+    const af = [
+      'silenceremove=start_periods=1:start_threshold=-50dB',
+      'areverse', 'silenceremove=start_periods=1:start_threshold=-50dB', 'areverse',
+      // Normalize first: loudnorm's dynamic mode would re-amplify a fade applied before it.
+      'loudnorm=I=-18:TP=-2:LRA=7', 'aresample=24000',
+      'afade=t=in:d=0.01', 'areverse', `afade=t=in:d=${fade}`, 'areverse',
+      'apad=pad_dur=0.08', 'aformat=sample_fmts=s16p:channel_layouts=mono',
+    ].join(',');
+    await run('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', '-i', raw, '-af', af, '-ac', '1', '-b:a', '32k', out]);
+    if (!hasLoudTail(await rmsWindows(out))) break;
+    if (fade === 0.12) {
+      fs.rmSync(out, { force: true });
+      fs.rmSync(raw, { force: true });
+      return { text, ok: false };
+    }
+  }
   fs.rmSync(raw, { force: true });
   return { text, ok: true };
 }
@@ -44,7 +58,7 @@ function fileURLToPathSafe(u) {
   return decodeURIComponent(u.pathname);
 }
 
-const words = JSON.parse(fs.readFileSync(wordsPath, 'utf8'));
+const words = stripTts(JSON.parse(fs.readFileSync(wordsPath, 'utf8')));
 fs.mkdirSync(outDir, { recursive: true });
 const exists = (f) => fs.existsSync(new URL(f, outDir));
 const texts = new Set();
