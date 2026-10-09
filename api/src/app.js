@@ -7,6 +7,7 @@ import { authRoutes, requireAuth } from './routes/auth.js';
 import { wordRoutes } from './routes/words.js';
 import { reviewRoutes } from './routes/review.js';
 import { statsRoutes } from './routes/stats.js';
+import { youtubeRoutes } from './routes/youtube.js';
 
 const CSP = {
   defaultSrc: ["'self'"],
@@ -40,6 +41,7 @@ export function createApp({ config, yt = null, now = () => new Date() }) {
   app.use('/api/words', wordRoutes({ now }));
   app.use('/api/review', reviewRoutes({ config, now }));
   app.use('/api/stats', statsRoutes({ now }));
+  app.use('/api', youtubeRoutes({ yt }));
 
   app.use('/api', (req, res) => res.status(404).json({ error: 'not_found' }));
 
