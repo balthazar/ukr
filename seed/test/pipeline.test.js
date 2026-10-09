@@ -103,8 +103,8 @@ describe('buildWords', () => {
     const folded = fold(parseFrequency('я 100\nмене 40\nдякую 30\nмаю 3\n'), ix);
     const words = buildWords(ix, folded, { limit: 2 });
     expect(words).toEqual([
-      { rank: 1, lemma: 'я', stressed: 'я', respelling: 'ya', ipa: '[ja]', pos: 'pron', glosses: ['I'], forms: ['я', 'мене'], audio: [{ url: MP3('я'), source: 'commons' }], freq: 140 },
-      { rank: 2, lemma: 'дякувати', stressed: 'дя́кувати', respelling: 'DYA-koo-va-ty', ipa: '[ˈdʲakʊʋɐte]', pos: 'verb', glosses: ['to thank'], forms: ['дякую'], audio: [{ url: MP3('дякувати'), source: 'commons' }], freq: 30 },
+      { rank: 1, lemma: 'я', stressed: 'я', respelling: 'ya', ipa: '[ja]', pos: 'pron', glosses: ['I'], forms: ['я', 'мене'], audio: [{ url: MP3('я'), source: 'commons' }], freq: 140, tables: [] },
+      { rank: 2, lemma: 'дякувати', stressed: 'дя́кувати', respelling: 'DYA-koo-va-ty', ipa: '[ˈdʲakʊʋɐte]', pos: 'verb', glosses: ['to thank'], forms: ['дякую'], audio: [{ url: MP3('дякувати'), source: 'commons' }], freq: 30, tables: [] },
     ]);
   });
 });

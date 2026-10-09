@@ -1,5 +1,5 @@
 import fs from 'node:fs';
-import { loadKaikki } from './lib/kaikki.js';
+import { loadKaikki, plain } from './lib/kaikki.js';
 import { parseFrequency, fold } from './lib/fold.js';
 import { buildWords } from './lib/build.js';
 import { russianOnlyTokens } from './lib/russian.js';
@@ -13,9 +13,12 @@ console.log(`kaikki: ${index.lemmas.size} lemmas, ${index.formToLemmas.size} for
 const freq = parseFrequency(fs.readFileSync(new URL('uk_full.txt', raw), 'utf8'));
 const russian = russianOnlyTokens(freq, parseFrequency(fs.readFileSync(new URL('ru_50k.txt', raw), 'utf8')));
 console.log(`russian-only tokens flagged: ${russian.size}`);
+// Forms seen at least this often in the subtitles are flagged "common" in the tables.
+const COMMON_MIN = 50;
+const commonTokens = new Set(freq.filter(([t, n]) => n >= COMMON_MIN && !russian.has(t)).map(([t]) => plain(t)));
 const ttsDir = new URL('../web/public/tts/', import.meta.url);
 const words = attachTts(
-  buildWords(index, fold(freq, index, { russian }), { limit: Number(process.env.LIMIT || 5000) }),
+  buildWords(index, fold(freq, index, { russian }), { limit: Number(process.env.LIMIT || 5000), commonTokens }),
   (file) => fs.existsSync(new URL(file, ttsDir)),
 );
 

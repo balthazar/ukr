@@ -1,5 +1,6 @@
 import PronouncePanel from './PronouncePanel.jsx';
 import StatusControl from './StatusControl.jsx';
+import InflectionTable from './InflectionTable.jsx';
 
 export default function WordDetails({ word, onStatus }) {
   return (
@@ -17,8 +18,9 @@ export default function WordDetails({ word, onStatus }) {
       <ul className="glosses">
         {word.glosses?.map((g) => <li key={g}>{g}</li>)}
       </ul>
-      {word.forms?.length > 1 && <p className="muted small">Common forms: {word.forms.join(', ')}</p>}
+      {word.forms?.length > 1 && !word.tables?.length && <p className="muted small">Common forms: {word.forms.join(', ')}</p>}
       <PronouncePanel word={word} />
+      {word.tables?.map((t, i) => <InflectionTable key={i} table={t} />)}
       <p className="legend">
         CAPS = stressed syllable. y as in "sit", ee as in "see", oo as in "food", kh as in "loch", ' = soft sign (soften the
         consonant), h is a voiced breathy h.

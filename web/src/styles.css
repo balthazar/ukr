@@ -113,3 +113,20 @@ input[type='text'], input[type='search'], input[type='password'] { font: inherit
 .tile .title { font-weight: 600; margin-top: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .player-wrap { position: relative; aspect-ratio: 16 / 9; background: #000; border-radius: var(--radius); overflow: hidden; }
 .player-wrap iframe, .player-wrap > div { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* Conjugation / declension tables */
+.inflection { margin: 16px 0 4px; border-top: 1px solid var(--line); padding-top: 12px; }
+.inflection summary { cursor: pointer; font-weight: 700; margin-bottom: 8px; }
+.inf-section { margin: 8px 0 12px; }
+.inf-title { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 4px; }
+.inf-grid { display: grid; gap: 4px 8px; align-items: center; }
+.inf-row { display: contents; }
+.inf-label, .inf-col { font-size: 0.8rem; color: var(--muted); }
+.inf-col { text-align: left; }
+.cell { display: flex; flex-direction: column; align-items: flex-start; text-align: left; min-width: 0; padding: 4px 8px; border: 1px solid var(--line); border-radius: var(--ctl); background: var(--surface); }
+.cell .form { font-weight: 600; overflow-wrap: anywhere; }
+.cell .resp { font-size: 0.75rem; color: var(--muted); overflow-wrap: anywhere; }
+.cell.common .form { text-decoration: underline; text-decoration-color: var(--ok); text-underline-offset: 3px; text-decoration-thickness: 2px; }
+.cell.empty { border: none; color: var(--muted); padding: 4px 8px; }
+.inf-flow { display: grid; grid-auto-flow: column; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 8px; }
+.inf-pair { display: grid; grid-template-columns: 4.2rem minmax(0, 1fr); gap: 6px; align-items: center; }

@@ -14,7 +14,7 @@ export const plain = (s) => s.toLowerCase().replace(/[̀́]/g, '').replace(/[ʼ�
 export const isUkrainianWord = (s) => UK_WORD.test(s) && /[^'-]/.test(s);
 
 export function createIndex() {
-  return { lemmas: new Map(), formToLemmas: new Map(), letterAudio: new Map() };
+  return { lemmas: new Map(), formToLemmas: new Map(), letterAudio: new Map(), formAudio: new Map() };
 }
 
 function addForm(index, form, lemma) {
@@ -37,6 +37,10 @@ export function addEntry(index, e) {
   const word = plain(e.word ?? '');
   if (!isUkrainianWord(word)) return;
 
+  // Any entry's recording (including form-only entries like мене) can voice a table cell.
+  const mp3 = (e.sounds ?? []).find((s) => s.mp3_url)?.mp3_url;
+  if (mp3 && !index.formAudio.has(word)) index.formAudio.set(word, mp3);
+
   const glosses = [];
   for (const sense of e.senses ?? []) {
     if (sense.form_of?.length || sense.tags?.includes('form-of')) {
@@ -50,8 +54,12 @@ export function addEntry(index, e) {
   if (!glosses.length) return;
 
   let lem = index.lemmas.get(word);
-  if (!lem) index.lemmas.set(word, (lem = { lemma: word, stressed: null, ipa: null, pos: [], glosses: [], audio: [] }));
-  if (!lem.pos.includes(e.pos)) lem.pos.push(e.pos);
+  if (!lem) index.lemmas.set(word, (lem = { lemma: word, stressed: null, ipa: null, pos: [], glosses: [], audio: [], inflections: [] }));
+  if (!lem.pos.includes(e.pos)) {
+    lem.pos.push(e.pos);
+    const tableForms = (e.forms ?? []).filter((f) => f.source === 'declension' || f.source === 'conjugation');
+    if (tableForms.length) lem.inflections.push({ pos: e.pos, lemma: word, args: e.head_templates?.[0]?.args ?? {}, forms: tableForms });
+  }
   for (const g of glosses) if (!lem.glosses.includes(g)) lem.glosses.push(g);
 
   const canonical = e.forms?.find((f) => f.tags?.includes('canonical'))?.form;

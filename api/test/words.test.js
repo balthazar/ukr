@@ -78,6 +78,25 @@ describe('GET /api/words', () => {
   });
 });
 
+describe('tables and lemma lookup', () => {
+  const table = { kind: 'verb', aspect: 'imperfective', partner: 'зробити', sections: [] };
+
+  it('list responses leave out tables; detail includes them', async () => {
+    await Word.updateOne({ lemma: 'дякувати' }, { $set: { tables: [table] } });
+    const list = await agent.get('/api/words').expect(200);
+    expect(list.body.items.every((w) => !('tables' in w))).toBe(true);
+    const id = list.body.items.find((w) => w.lemma === 'дякувати')._id;
+    const one = await agent.get(`/api/words/${id}`).expect(200);
+    expect(one.body.tables).toEqual([table]);
+  });
+
+  it('GET /lemma/:lemma finds a word by its dictionary form, 404 otherwise', async () => {
+    const res = await agent.get(`/api/words/lemma/${encodeURIComponent('хата')}`).expect(200);
+    expect(res.body).toMatchObject({ lemma: 'хата', progress: null });
+    await agent.get(`/api/words/lemma/${encodeURIComponent('нема')}`).expect(404);
+  });
+});
+
 describe('word detail and status', () => {
   it('GET /:id returns word + progress, 404 for bad or unknown ids', async () => {
     const res = await agent.get(`/api/words/${words[0]._id}`).expect(200);

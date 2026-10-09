@@ -83,3 +83,16 @@ describe('gloss overrides', () => {
     expect(w.glosses).toEqual(['I']);
   });
 });
+
+describe('attachTts on table cells', () => {
+  it('voices cells that have no recording, keyed by the plain form', () => {
+    const cellA = { form: 'ро́биш', respelling: 'RO-bysh', common: true, audio: null };
+    const cellB = { form: 'роблю́', respelling: 'ro-BLYOO', common: true, audio: { url: 'https://x', source: 'commons' } };
+    const words = [{ lemma: 'робити', audio: [{ url: 'u', source: 'commons' }], tables: [{ kind: 'verb', sections: [{ title: 'Present', rows: [{ label: 'ти', cells: [cellA] }, { label: 'я', cells: [cellB, null] }] }] }] }];
+    const [w] = attachTts(words, (file) => file === ttsFile('робиш'));
+    const rows = w.tables[0].sections[0].rows;
+    expect(rows[0].cells[0].audio).toEqual({ url: `/tts/${ttsFile('робиш')}`, source: 'tts' });
+    expect(rows[1].cells[0].audio).toEqual({ url: 'https://x', source: 'commons' });
+    expect(rows[1].cells[1]).toBeNull();
+  });
+});

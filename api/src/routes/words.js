@@ -36,12 +36,20 @@ export function wordRoutes({ now }) {
     }
 
     const [items, total] = await Promise.all([
-      Word.find(filter).sort({ rank: 1 }).skip((page - 1) * limit).limit(limit).lean(),
+      // Tables are only needed on the word card.
+      Word.find(filter).select('-tables').sort({ rank: 1 }).skip((page - 1) * limit).limit(limit).lean(),
       Word.countDocuments(filter),
     ]);
     const progress = await Progress.find({ wordId: { $in: items.map((w) => w._id) } }).lean();
     const byWord = new Map(progress.map((p) => [String(p.wordId), p]));
     res.json({ items: items.map((w) => ({ ...w, progress: byWord.get(String(w._id)) ?? null })), total, page, limit });
+  });
+
+  r.get('/lemma/:lemma', async (req, res) => {
+    const word = await Word.findOne({ lemma: req.params.lemma }).lean();
+    if (!word) throw httpError(404, 'not_found', 'word not found');
+    const progress = await Progress.findOne({ wordId: word._id }).lean();
+    res.json({ ...word, progress });
   });
 
   r.get('/:id', async (req, res) => {

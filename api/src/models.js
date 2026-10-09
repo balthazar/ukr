@@ -13,6 +13,8 @@ const wordSchema = new Schema({
   forms: [String],
   audio: [{ _id: false, url: String, source: String }],
   freq: Number,
+  // Conjugation/declension tables from the seed (see seed/lib/tables.js); shape is owned by the seed.
+  tables: { type: [Schema.Types.Mixed], default: undefined },
 });
 
 const progressSchema = new Schema({

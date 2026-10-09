@@ -1,4 +1,5 @@
 import { respell } from './respell.js';
+import { extractTable } from './tables.js';
 
 // A vowel letter's recording is the vowel itself; a consonant's is its name (в = "ve").
 const VOWEL_LETTERS = new Set([...'аеиіоуєюяї']);
@@ -12,7 +13,7 @@ function audioFor(index, lemma, lem) {
 // Glosses Wiktionary merges into a lemma that are wrong for learners (noun "ego" on я).
 export const EXCLUDED_GLOSSES = { я: ['ego'] };
 
-export function buildWords(index, folded, { limit = 5000, excludedGlosses = EXCLUDED_GLOSSES } = {}) {
+export function buildWords(index, folded, { limit = 5000, excludedGlosses = EXCLUDED_GLOSSES, commonTokens = new Set() } = {}) {
   const out = [];
   for (const f of folded) {
     if (out.length >= limit) break;
@@ -30,6 +31,7 @@ export function buildWords(index, folded, { limit = 5000, excludedGlosses = EXCL
       forms: f.forms,
       audio: audioFor(index, f.lemma, lem),
       freq: f.freq,
+      tables: (lem.inflections ?? []).map((i) => extractTable(i, { common: commonTokens, audio: index.formAudio })).filter(Boolean),
     });
   }
   return out;
