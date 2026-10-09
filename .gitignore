@@ -2,3 +2,4 @@ node_modules/
 dist/
 seed/raw/
 .env
+.superpowers/
