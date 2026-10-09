@@ -5,6 +5,8 @@ import mongoose from 'mongoose';
 import { errorHandler } from './lib/http.js';
 import { authRoutes, requireAuth } from './routes/auth.js';
 import { wordRoutes } from './routes/words.js';
+import { reviewRoutes } from './routes/review.js';
+import { statsRoutes } from './routes/stats.js';
 
 const CSP = {
   defaultSrc: ["'self'"],
@@ -36,6 +38,8 @@ export function createApp({ config, yt = null, now = () => new Date() }) {
   app.get('/api/me', (req, res) => res.json({ ok: true }));
   // ROUTES: protected routers are mounted below by later tasks.
   app.use('/api/words', wordRoutes({ now }));
+  app.use('/api/review', reviewRoutes({ config, now }));
+  app.use('/api/stats', statsRoutes({ now }));
 
   app.use('/api', (req, res) => res.status(404).json({ error: 'not_found' }));
 
