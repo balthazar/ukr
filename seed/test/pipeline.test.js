@@ -140,3 +140,42 @@ describe('fold: shared forms and Russian contamination', () => {
     expect(folded.map((f) => f.lemma)).not.toContain("м'яти");
   });
 });
+
+describe('addEntry: personal pronoun tables', () => {
+  // Kaikki's я table lists every person's paradigm (trimmed from the real entry).
+  const P = ['personal', 'pronoun'];
+  const ya = {
+    word: 'я', pos: 'pron', lang_code: 'uk', senses: [{ glosses: ['I'] }],
+    forms: [
+      { form: 'я', source: 'declension', tags: ['first-person', 'nominative', 'singular', ...P] },
+      { form: 'мене́', source: 'declension', tags: ['first-person', 'genitive', 'singular', ...P] },
+      { form: 'ти', source: 'declension', tags: ['informal', 'nominative', 'second-person', 'singular', ...P] },
+      { form: 'тебе́', source: 'declension', tags: ['genitive', 'informal', 'second-person', 'singular', ...P] },
+      { form: 'Вас', source: 'declension', tags: ['formal', 'genitive', 'second-person', 'singular', ...P] },
+      { form: 'його́', source: 'declension', tags: ['genitive', 'masculine', 'singular', 'third-person', ...P] },
+      { form: 'нам', source: 'declension', tags: ['dative', 'first-person', 'plural', ...P] },
+    ],
+  };
+  const ty = {
+    word: 'ти', pos: 'pron', lang_code: 'uk', senses: [{ glosses: ['you'] }],
+    forms: [
+      { form: 'ти', source: 'declension', tags: ['informal', 'nominative', 'second-person', 'singular', ...P] },
+      { form: 'тебе́', source: 'declension', tags: ['genitive', 'informal', 'second-person', 'singular', ...P] },
+    ],
+  };
+  const ix = createIndex();
+  addEntry(ix, ya);
+  addEntry(ix, ty);
+
+  it("keeps only the lemma's own person/number/gender/formality forms", () => {
+    expect([...ix.formToLemmas.get('мене')]).toEqual(['я']);
+    expect([...ix.formToLemmas.get('тебе')]).toEqual(['ти']);
+    for (const f of ['вас', 'його', 'нам']) expect(ix.formToLemmas.get(f)?.has('я') ?? false).toBe(false);
+  });
+
+  it('folds тебе into ти, not я', () => {
+    const folded = fold(parseFrequency('я 100\nти 80\nтебе 50\nмене 40\n'), ix);
+    expect(folded.find((f) => f.lemma === 'я')).toMatchObject({ freq: 140, forms: ['я', 'мене'] });
+    expect(folded.find((f) => f.lemma === 'ти')).toMatchObject({ freq: 130, forms: ['ти', 'тебе'] });
+  });
+});

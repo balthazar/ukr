@@ -6,6 +6,9 @@ const SKIP_SENSE_TAGS = new Set(['obsolete', 'archaic']);
 const LETTERS = "абвгґдеєжзиіїйклмнопрстуфхцчшщьюя'";
 const UK_WORD = new RegExp(`^[${LETTERS}]+(?:-[${LETTERS}]+)*$`);
 const MAX_AUDIO = 3;
+const PERSONS = new Set(['first-person', 'second-person', 'third-person']);
+// Tags that tell one pronoun paradigm from another inside a shared table (я/ти/Ви/він/ми...).
+const PARADIGM_TAGS = new Set([...PERSONS, 'singular', 'plural', 'masculine', 'feminine', 'neuter', 'formal', 'informal']);
 
 export const plain = (s) => s.toLowerCase().replace(/[̀́]/g, '').replace(/[ʼ’]/g, "'");
 export const isUkrainianWord = (s) => UK_WORD.test(s) && /[^'-]/.test(s);
@@ -56,9 +59,22 @@ export function addEntry(index, e) {
   }
 
   addForm(index, word, word);
+  const own = ownParadigm(e.forms ?? [], word);
   for (const f of e.forms ?? []) {
-    if (f.source === 'declension' || f.source === 'conjugation') addForm(index, plain(f.form ?? ''), word);
+    if (f.source !== 'declension' && f.source !== 'conjugation') continue;
+    if (own && f.source === 'declension' && paradigm(f) && paradigm(f) !== own) continue;
+    addForm(index, plain(f.form ?? ''), word);
   }
+}
+
+const paradigm = (f) =>
+  f.tags?.some((t) => PERSONS.has(t)) ? f.tags.filter((t) => PARADIGM_TAGS.has(t)).sort().join(' ') : null;
+
+// Personal pronoun tables list every person's forms; the lemma's own paradigm is the
+// one on its nominative row (я -> first-person singular).
+function ownParadigm(forms, word) {
+  const row = forms.find((f) => f.source === 'declension' && f.tags?.includes('nominative') && plain(f.form ?? '') === word);
+  return row ? paradigm(row) : null;
 }
 
 export async function loadKaikki(path) {
