@@ -93,22 +93,23 @@ Traefik (ingressClassName: traefik)
 
 | Field | Example | Notes |
 |---|---|---|
-| `rank` | 42 | 1 = most frequent; unique index |
+| `rank` | 42 | 1 = most frequent; indexed (not unique, so re-seeds can shift ranks) |
 | `lemma` | `дякую` | dictionary form, no stress mark; unique index |
 | `stressed` | `дя́кую` | combining acute on stressed vowel |
 | `respelling` | `DYA-koo-yoo` | generated from `stressed` |
 | `ipa` | `[ˈdʲakuju]` | from Wiktionary when present |
-| `pos` | `verb` | |
+| `pos` | `verb` | homographs merged, e.g. `noun, verb` |
 | `glosses` | `["thank you"]` | English, at most 5 |
 | `forms` | `["дякую", ...]` | top inflected forms folded into this lemma (for mic matching and display) |
-| `audio` | `[{url, source:"commons"}]` | Wikimedia Commons file URLs |
+| `audio` | `[{url, source:"commons"}]` | Wikimedia Commons `mp3_url`s (mp3 so iOS Safari can play them), max 3 |
 | `freq` | 123456 | summed frequency of folded forms |
 
 ### `progress` (one doc per started word)
 
 `wordId` (unique), `status` (`learning` | `known`), `ease` (default 2.5),
 `interval` (days), `reps`, `lapses`, `due` (Date), `lastReviewed`,
-`micPass`, `micTotal`.
+`micPass`, `micTotal`, `introducedAt` (set when the first review grade creates
+the doc; used for the daily new-word limit, day boundary is UTC midnight).
 
 ### `videos`
 
@@ -134,7 +135,9 @@ Words and review:
   `q` matches lemma prefix or gloss substring. Each item includes its progress (or null).
 - `GET /api/words/:id`: word + progress.
 - `PUT /api/words/:id/status {status: "known"|"learning"|"reset"}`: `reset` deletes progress.
-- `POST /api/words/:id/mic {pass: bool}`: increments `micTotal` (and `micPass`).
+- `POST /api/words/:id/mic {pass: bool}`: increments `micTotal` (and `micPass`) when
+  the word has progress; for an unstarted word it records nothing and returns
+  `{progress: null}` (a mic attempt must not silently start a word).
 - `GET /api/review`: due `learning` cards (`due <= now`, oldest first) plus up to
   `NEW_PER_DAY` new words (lowest rank without progress), minus new words already
   introduced today. Introducing a new word happens on its first grade.
@@ -149,6 +152,7 @@ Videos:
 - `GET /api/channels`, `POST /api/channels {channelIdOrUrlOrHandle}`, `DELETE /api/channels/:id`.
 - `GET /api/channels/:id/videos?pageToken=`: uploads playlist items, cached.
 - `GET /api/videos?state=inprogress|watched`: from `videos`, newest first.
+- `GET /api/videos/:videoId`: saved state for one video (player resume), 404 if never played.
 - `PUT /api/videos/:videoId/progress {position, duration, meta:{title, channelId, channelTitle, thumbnail}}`:
   upsert; server sets `watched=true` when `position/duration >= 0.9`
   (never unsets it automatically).
@@ -181,14 +185,15 @@ Grades map to SM-2 quality: Again=1, Hard=3, Good=4, Easy=5.
 Input: stressed form. Output: English-alphabet respelling, hyphen between
 syllables, stressed syllable uppercase.
 
-- Letter map: а a, б b, в v, г h, ґ g, д d, е e, є yeh, ж zh, з z, и y (as in "sit"),
+- Letter map: а a, б b, в v, г h, ґ g, д d, е e, ж zh, з z, и y (as in "sit"),
   і ee, ї yee, й y, к k, л l, м m, н n, о o, п p, р r, с s, т t, у oo, ф f, х kh,
-  ц ts, ч ch, ш sh, щ shch, ь ' (apostrophe), ю yoo, я ya, apostrophe (ʼ) separates (no sound).
-- `є ю я` after a consonant (not after apostrophe or soft sign) soften it and
-  render as `ye/yoo/ya` attached to that consonant syllable.
+  ц ts, ч ch, ш sh, щ shch, ь ' (apostrophe on the preceding consonant), ю yoo, я ya;
+  є renders `ye` everywhere (not `yeh`, which reads badly before a consonant);
+  the apostrophe letter (ʼ) is silent and dropped.
 - Syllabification: one vowel per syllable; a single consonant between vowels
   starts the next syllable; for consonant clusters, the last consonant starts
-  the next syllable.
+  the next syllable, except an obstruent + р/л pair, which both start it
+  (`до́брий` -> `DO-bryy`, `Украї́на` -> `oo-kra-YEE-na`).
 - Words without a stress mark (e.g. monosyllables) render lowercase.
 - A legend explaining the scheme is shown on word cards.
 
@@ -222,10 +227,11 @@ Tabs: Today, Review, Words, Watch. Mobile-first layout.
 ## Seed pipeline (`seed/`, Node scripts)
 
 1. Download sources to `seed/raw/` (gitignored): a Ukrainian subtitle frequency
-   list (candidate: hermitdave FrequencyWords `uk` full list) and the kaikki.org
-   Wiktionary extract for Ukrainian (JSONL). Exact URLs and formats are
-   verified as the first implementation task; the pipeline adapts to what is
-   actually there.
+   list (hermitdave FrequencyWords `content/2018/uk/uk_full.txt`, lines of
+   `word count`, about 290k lines, includes Russian tokens that must be
+   filtered) and the kaikki.org Wiktionary extract for Ukrainian
+   (`kaikki.org-dictionary-Ukrainian.jsonl`, about 300 MB, one entry per line).
+   Both were checked on 2026-10-09.
 2. Build a form -> lemma map from Wiktionary entries (headwords and their
    `forms` / `form_of` data).
 3. Fold frequency-list forms into lemmas, summing frequency; drop proper nouns,
