@@ -1,0 +1,85 @@
+# ukr: Ukrainian vocab + comprehensible input. One pod, state in infra/mongo.
+#
+# Secret is created out of band (see README "First deploy"), never committed:
+#   kubectl --context dadonew -n apps create secret generic ukr-secrets \
+#     --from-literal=APP_PASSWORD=... \
+#     --from-literal=MONGO_URI='mongodb://mongo.infra.svc.cluster.local:27017' \
+#     --from-literal=SESSION_SECRET="$(openssl rand -hex 32)" \
+#     --from-literal=YOUTUBE_API_KEY=...
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: ukr-config
+  namespace: apps
+data:
+  MONGO_DB: "ukr"
+  PORT: "8080"
+  NEW_PER_DAY: "10"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ukr
+  namespace: apps
+  labels: { app: ukr }
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: ukr }
+  template:
+    metadata:
+      labels: { app: ukr }
+    spec:
+      imagePullSecrets:
+        - name: ghcr-creds
+      containers:
+        - name: ukr
+          image: ghcr.io/balthazar/ukr:latest
+          ports: [{ containerPort: 8080 }]
+          envFrom:
+            - configMapRef: { name: ukr-config }
+            - secretRef: { name: ukr-secrets }
+          resources:
+            requests: { cpu: 50m, memory: 128Mi }
+            limits: { cpu: 500m, memory: 512Mi }
+          startupProbe:
+            httpGet: { path: /health, port: 8080 }
+            periodSeconds: 5
+            failureThreshold: 24
+          livenessProbe:
+            httpGet: { path: /health, port: 8080 }
+            periodSeconds: 60
+            failureThreshold: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ukr
+  namespace: apps
+  labels: { app: ukr }
+spec:
+  type: ClusterIP
+  selector: { app: ukr }
+  ports:
+    - port: 80
+      targetPort: 8080
+      protocol: TCP
+---
+# TLS terminates at Cloudflare (proxied DNS), so no tls: block here.
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ukr
+  namespace: apps
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: ukr.balthazar.dev
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: ukr
+                port: { number: 80 }

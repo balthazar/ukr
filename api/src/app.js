@@ -1,3 +1,4 @@
+import path from 'node:path';
 import express from 'express';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -47,7 +48,14 @@ export function createApp({ config, yt = null, now = () => new Date() }) {
 
   app.use('/api', (req, res) => res.status(404).json({ error: 'not_found' }));
 
-  // STATIC: the SPA is served here by Task 15.
+  if (config.webDist) {
+    app.use('/assets', express.static(path.join(config.webDist, 'assets'), { immutable: true, maxAge: '1y' }));
+    app.use(express.static(config.webDist, { index: false, maxAge: 0 }));
+    app.get('/{*splat}', (req, res) => {
+      res.set('Cache-Control', 'no-cache');
+      res.sendFile(path.join(config.webDist, 'index.html'));
+    });
+  }
 
   app.use(errorHandler);
   return app;

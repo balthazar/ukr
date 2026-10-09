@@ -1,0 +1,8 @@
+**/node_modules
+**/dist
+seed/raw
+.git
+.github
+.superpowers
+docs
+api/.env
