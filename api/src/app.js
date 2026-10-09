@@ -3,6 +3,7 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
 import { errorHandler } from './lib/http.js';
+import { authRoutes, requireAuth } from './routes/auth.js';
 
 const CSP = {
   defaultSrc: ["'self'"],
@@ -29,7 +30,10 @@ export function createApp({ config, yt = null, now = () => new Date() }) {
     res.status(up ? 200 : 503).json({ ok: up });
   });
 
-  // ROUTES: auth and protected routers are mounted here by later tasks.
+  app.use('/api', authRoutes(config));
+  app.use('/api', requireAuth(config));
+  app.get('/api/me', (req, res) => res.json({ ok: true }));
+  // ROUTES: protected routers are mounted below by later tasks.
 
   app.use('/api', (req, res) => res.status(404).json({ error: 'not_found' }));
 
